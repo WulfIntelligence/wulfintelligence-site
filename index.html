@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Prompt Generator</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --panel: #171a21;
+      --panel-2: #1f2430;
+      --text: #e6eaf2;
+      --muted: #a8b0c2;
+      --brand: #7aa2f7;
+      --accent: #98c379;
+      --danger: #e06c75;
+      --warn: #e5c07b;
+      --border: #2a3140;
+      --shadow: 0 10px 30px rgba(0,0,0,0.35);
+      --radius: 14px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; background: var(--bg); color: var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      line-height: 1.5;
+    }
+
+    header {
+      position: sticky; top: 0; z-index: 10;
+      background: linear-gradient(180deg, rgba(23,26,33,0.95), rgba(23,26,33,0.90) 70%, rgba(23,26,33,0));
+      backdrop-filter: saturate(120%) blur(6px);
+      border-bottom: 1px solid var(--border);
+    }
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 16px 20px; }
+    .row { display: grid; gap: 16px; }
+
+    .topbar { display: flex; align-items: center; justify-content: space-between; }
+    .title { font-size: 20px; font-weight: 700; letter-spacing: 0.2px; }
+    .subtitle { color: var(--muted); font-size: 13px; }
+
+    main .wrap { padding-top: 18px; }
+
+    .grid {
+      display: grid; gap: 16px;
+      grid-template-columns: 1.2fr 1fr;
+    }
+    @media (max-width: 980px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: linear-gradient(180deg, var(--panel), var(--panel-2));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+    .card h3 { margin: 0 0 10px; font-size: 16px; }
+    .card .body { padding: 16px; }
+
+    label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px; }
+    input[type="text"], input[type="number"], select, textarea {
+      width: 100%; background: #0e121a; color: var(--text);
+      border: 1px solid var(--border); outline: none; border-radius: 10px;
+      padding: 10px 12px; font-size: 14px;
+    }
+    textarea { min-height: 110px; resize: vertical; }
+
+    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 720px) { .row-2 { grid-template-columns: 1fr; } }
+
+    .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    button, .btn {
+      appearance: none; border: 1px solid var(--border); background: #101522; color: var(--text);
+      padding: 10px 12px; border-radius: 10px; cursor: pointer; font-size: 14px;
+      transition: transform 0.04s ease, background 0.2s ease, border-color 0.2s ease;
+    }
+    button:hover, .btn:hover { background: #111a2b; border-color: #3a4256; }
+    button:active, .btn:active { transform: translateY(1px); }
+    .primary { background: #142035; border-color: #2f3c58; }
+    .primary:hover { background: #192848; }
+    .success { background: #123019; border-color: #1e4b29; }
+    .danger { background: #2b1618; border-color: #51242a; }
+    .ghost { background: transparent; }
+
+    .note { font-size: 12px; color: var(--muted); }
+    .pill {
+      display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; border: 1px solid var(--border);
+      border-radius: 999px; background: #0e1118; font-size: 12px; color: var(--muted);
+    }
+
+    details { border: 1px dashed var(--border); border-radius: 12px; padding: 10px 12px; background: #0d1117; }
+    details[open] { background: #0f131a; }
+    summary { cursor: pointer; font-weight: 600; }
+
+    .template-list {
+      display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px;
+    }
+    @media (max-width: 980px) { .template-list { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 620px) { .template-list { grid-template-columns: 1fr; } }
+    .template {
+      border: 1px solid var(--border); border-radius: 12px; padding: 12px; background: #0e1219; cursor: pointer;
+    }
+    .template:hover { background: #101624; }
+    .template h4 { margin: 0 0 6px; font-size: 14px; }
+    .template p { margin: 0; font-size: 12px; color: var(--muted); }
+
+    .stack { display: grid; gap: 10px; }
+
+    .out { display: grid; gap: 10px; }
+    .out textarea { min-height: 260px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+    .toolbar { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    .history { max-height: 360px; overflow: auto; border: 1px solid var(--border); border-radius: 12px; }
+    .history-item { display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+    .history-item:last-child { border-bottom: 0; }
+    .history-title { font-weight: 600; }
+    .muted { color: var(--muted); font-size: 12px; }
+
+    .flex { display: flex; align-items: center; gap: 8px; }
+
+    .footer { display: flex; justify-content: space-between; align-items: center; padding: 12px 0 4px; }
+
+    .kbd { font-family: ui-monospace, Menlo, Consolas, monospace; border: 1px solid var(--border); padding: 2px 6px; border-radius: 6px; background: #0c1016; font-size: 12px; }
+
+    .hidden { display: none !important; }
+    .right { text-align: right; }
+
+    .chip { display:inline-flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); }
+    .chip input { margin:0; }
+
+    .badge { font-size: 11px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); background: #0c1118; color: var(--muted); }
+
+    .sep { height: 1px; background: var(--border); margin: 8px 0; }
+
+    .toast { position: fixed; right: 14px; bottom: 14px; background: #101521; border: 1px solid var(--border); color: var(--text);
+      padding: 10px 12px; border-radius: 10px; box-shadow: var(--shadow); opacity: 0; pointer-events: none; transform: translateY(8px);
+      transition: opacity .2s ease, transform .2s ease; font-size: 13px; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap topbar" role="banner">
+      <div>
+        <div class="title">Prompt Generator</div>
+        <div class="subtitle">Design structured, high‑signal prompts. Save, edit, export.</div>
+      </div>
+      <div class="controls">
+        <button id="btn-new" class="ghost" title="Clear all">New</button>
+        <button id="btn-export-txt" class="ghost" title="Download .txt">Export .txt</button>
+        <button id="btn-export-json" class="ghost" title="Download .json">Export .json</button>
+        <label class="pill" title="Import a .json file exported from this app">
+          Import
+          <input id="file-import" type="file" accept="application/json" style="display:none" />
+        </label>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="wrap">
+      <div class="grid">
+        <!-- LEFT: Composer -->
+        <section class="card" aria-labelledby="composer-heading">
+          <div class="body stack">
+            <h3 id="composer-heading">Compose</h3>
+
+            <div class="stack">
+              <label for="goal">Goal or task</label>
+              <textarea id="goal" placeholder="Describe what you want the AI to do. Example: Summarize a 10‑page article into a 5‑bullet brief for busy executives."></textarea>
+              <div class="flex muted">
+                <span id="goal-count" class="note">0 chars</span>
+                <span class="note">Tip: one clear task per prompt is best.</span>
+              </div>
+            </div>
+
+            <div class="row-2">
+              <div>
+                <label for="role">Expert role</label>
+                <input id="role" type="text" placeholder="Example: Senior technical writer" />
+              </div>
+              <div>
+                <label for="audience">Audience</label>
+                <input id="audience" type="text" placeholder="Example: Non‑technical executives" />
+              </div>
+            </div>
+
+            <div class="row-2">
+              <div>
+                <label for="tone">Tone</label>
+                <select id="tone">
+                  <option value="clear">Clear</option>
+                  <option value="concise">Concise</option>
+                  <option value="friendly">Friendly</option>
+                  <option value="formal">Formal</option>
+                  <option value="persuasive">Persuasive</option>
+                  <option value="analytical">Analytical</option>
+                </select>
+              </div>
+              <div>
+                <label for="format">Output format</label>
+                <select id="format">
+                  <option value="paragraphs">Paragraphs</option>
+                  <option value="bullets">Bulleted list</option>
+                  <option value="steps">Numbered steps</option>
+                  <option value="table">Table (pipe format)</option>
+                  <option value="json">JSON</option>
+                  <option value="code">Code block</option>
+                </select>
+              </div>
+            </div>
+
+            <details>
+              <summary>Optional constraints and guidance</summary>
+              <div class="stack" style="margin-top:10px">
+                <div class="row-2">
+                  <div>
+                    <label for="length">Length guidance (words)
+                      <span class="note">0 means no limit</span>
+                    </label>
+                    <input id="length" type="number" min="0" step="50" value="0" />
+                  </div>
+                  <div>
+                    <label for="reading">Reading level</label>
+                    <select id="reading">
+                      <option value="">No preference</option>
+                      <option value="grade7">Grade 7</option>
+                      <option value="grade9">Grade 9</option>
+                      <option value="grade12">Grade 12</option>
+                      <option value="college">College</option>
+                      <option value="expert">Expert</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="stack">
+                  <label>Quality options</label>
+                  <div class="controls">
+                    <label class="chip"><input id="chk-ask-questions" type="checkbox" checked /> Ask clarifying questions if needed</label>
+                    <label class="chip"><input id="chk-citations" type="checkbox" /> Include citations when making claims</label>
+                    <label class="chip"><input id="chk-examples" type="checkbox" /> Provide one example</label>
+                    <label class="chip"><input id="chk-structure" type="checkbox" checked /> Use headings for sections</label>
+                    <label class="chip"><input id="chk-constraints" type="checkbox" /> Show explicit constraints section</label>
+                  </div>
+                </div>
+
+                <div class="stack">
+                  <label for="extra">Extra context</label>
+                  <textarea id="extra" placeholder="Add domain facts, reference points, or edge cases."></textarea>
+                </div>
+              </div>
+            </details>
+
+            <div class="stack">
+              <label>Templates</label>
+              <div id="templates" class="template-list" role="list"></div>
+              <div class="note">Click a template to prefill fields. You can edit after applying.</div>
+            </div>
+
+            <div class="toolbar">
+              <button id="btn-generate" class="primary">Generate</button>
+              <button id="btn-copy" class="">Copy</button>
+              <button id="btn-save" class="success">Save</button>
+              <button id="btn-clear" class="danger">Clear</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- RIGHT: Output + History -->
+        <section class="card" aria-labelledby="output-heading">
+          <div class="body stack">
+            <h3 id="output-heading">Output</h3>
+
+            <div class="out">
+              <label for="result">Prompt (editable)</label>
+              <textarea id="result" placeholder="Your generated prompt appears here..."></textarea>
+              <div class="controls">
+                <span class="note">Edit above then save or export.</span>
+              </div>
+            </div>
+
+            <div class="sep"></div>
+
+            <div class="stack">
+              <div class="flex" style="justify-content:space-between">
+                <h3 style="margin:0">History</h3>
+                <div class="controls">
+                  <input id="search" type="text" placeholder="Search history" style="width:200px" />
+                  <button id="btn-clear-history" class="danger" title="Delete all">Clear history</button>
+                </div>
+              </div>
+              <div id="history" class="history" role="list"></div>
+            </div>
+          </div>
+
+          <div class="body footer">
+            <div class="muted">Local only. Data is saved in your browser.</div>
+            <div class="muted">Shortcuts: <span class="kbd">Ctrl/Command + Enter</span> to generate</div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script>
+  // Utilities
+  const $ = (q, el=document) => el.querySelector(q);
+  const $$ = (q, el=document) => Array.from(el.querySelectorAll(q));
+  const on = (el, ev, fn) => el.addEventListener(ev, fn);
+  const uid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
+  const nowISO = () => new Date().toISOString();
+
+  function toast(msg, ms=1600) {
+    const t = $('#toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), ms);
+  }
+
+  // Templates
+  const DEFAULT_TEMPLATES = [
+    {
+      id: 'writing',
+      title: 'Writing Assistant',
+      desc: 'Articles, emails, summaries with structure and clarity.',
+      preset: {
+        role: 'Senior editor and technical writer',
+        tone: 'clear',
+        format: 'paragraphs',
+        audience: 'Busy professionals',
+        extra: 'Use topic sentences, keep paragraphs under 120 words.'
+      }
+    },
+    {
+      id: 'coding',
+      title: 'Coding Helper',
+      desc: 'Explain code, write functions, add tests.',
+      preset: {
+        role: 'Senior full‑stack engineer and code reviewer',
+        tone: 'analytical',
+        format: 'steps',
+        audience: 'Developers at intermediate level',
+        extra: 'Prefer readable code, small functions, and minimal dependencies.'
+      }
+    },
+    {
+      id: 'image',
+      title: 'Image Prompt (general)',
+      desc: 'Generate structured image prompts.',
+      preset: {
+        role: 'Creative director',
+        tone: 'concise',
+        format: 'bullets',
+        audience: 'AI image model',
+        extra: 'Include subject, medium, style, lighting, lens, composition, and mood.'
+      }
+    },
+    {
+      id: 'marketing',
+      title: 'Marketing Copy',
+      desc: 'Landing page copy, ads, and hooks.',
+      preset: {
+        role: 'Direct‑response marketer',
+        tone: 'persuasive',
+        format: 'bullets',
+        audience: 'Leads with limited attention',
+        extra: 'Use benefit‑first headlines and social proof. Avoid hype.'
+      }
+    },
+    {
+      id: 'research',
+      title: 'Research Assistant',
+      desc: 'Plans, sources, and synthesis.',
+      preset: {
+        role: 'Research analyst',
+        tone: 'analytical',
+        format: 'steps',
+        audience: 'Decision makers',
+        extra: 'Provide a plan, note assumptions, and include citations when possible.'
+      }
+    },
+    {
+      id: 'qa',
+      title: 'Critic & QA',
+      desc: 'Get feedback and edge cases.',
+      preset: {
+        role: 'Socratic reviewer and QA tester',
+        tone: 'clear',
+        format: 'bullets',
+        audience: 'Product team',
+        extra: 'List risks, failure modes, and test scenarios.'
+      }
+    }
+  ];
+
+  // Local Storage Keys
+  const LS = {
+    HISTORY: 'pg.history.v1',
+    TEMPLATES: 'pg.templates.v1'
+  };
+
+  // State
+  let state = {
+    history: [],
+    templates: []
+  };
+
+  // Init
+  document.addEventListener('DOMContentLoaded', () => {
+    hydrate();
+    renderTemplates();
+    bindUI();
+  });
+
+  function hydrate() {
+    try {
+      const h = JSON.parse(localStorage.getItem(LS.HISTORY) || '[]');
+      const t = JSON.parse(localStorage.getItem(LS.TEMPLATES) || 'null') || DEFAULT_TEMPLATES;
+      state.history = Array.isArray(h) ? h : [];
+      state.templates = Array.isArray(t) ? t : DEFAULT_TEMPLATES;
+      renderHistory();
+    } catch (e) {
+      console.error('Failed to load from storage', e);
+      state.history = [];
+      state.templates = DEFAULT_TEMPLATES;
+    }
+  }
+
+  function persist() {
+    localStorage.setItem(LS.HISTORY, JSON.stringify(state.history));
+    localStorage.setItem(LS.TEMPLATES, JSON.stringify(state.templates));
+  }
+
+  function bindUI() {
+    const goal = $('#goal');
+    on(goal, 'input', () => $('#goal-count').textContent = goal.value.length + ' chars');
+
+    on($('#btn-generate'), 'click', (e) => { e.preventDefault(); generate(); });
+    on(document, 'keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); generate(); }
+    });
+
+    on($('#btn-copy'), 'click', () => copyResult());
+    on($('#btn-save'), 'click', () => saveCurrent());
+    on($('#btn-clear'), 'click', () => clearComposer());
+    on($('#btn-new'), 'click', () => { clearComposer(); $('#result').value=''; toast('Cleared'); });
+
+    on($('#btn-export-txt'), 'click', () => downloadText($('#result').value || ''));
+    on($('#btn-export-json'), 'click', () => downloadJSON(currentAsJSON()));
+
+    on($('#file-import'), 'change', importJSONFile);
+
+    on($('#search'), 'input', renderHistory);
+    on($('#btn-clear-history'), 'click', clearHistory);
+  }
+
+  function renderTemplates() {
+    const box = $('#templates');
+    box.innerHTML = '';
+    state.templates.forEach(t => {
+      const div = document.createElement('button');
+      div.type = 'button';
+      div.className = 'template';
+      div.setAttribute('role', 'listitem');
+      div.innerHTML = `<h4>${esc(t.title)}</h4><p>${esc(t.desc)}</p>`;
+      on(div, 'click', () => applyTemplate(t));
+      box.appendChild(div);
+    });
+  }
+
+  function applyTemplate(t) {
+    if (!t || !t.preset) return;
+    $('#role').value = t.preset.role || '';
+    $('#tone').value = t.preset.tone || 'clear';
+    $('#format').value = t.preset.format || 'paragraphs';
+    $('#audience').value = t.preset.audience || '';
+    $('#extra').value = t.preset.extra || '';
+    toast('Template applied');
+  }
+
+  function generate() {
+    // Minimal required: goal
+    const goal = $('#goal').value.trim();
+    if (!goal) {
+      toast('Add a goal or task first.');
+      $('#goal').focus();
+      return;
+    }
+
+    // Collect settings
+    const role = $('#role').value.trim();
+    const audience = $('#audience').value.trim();
+    const tone = $('#tone').value;
+    const format = $('#format').value;
+    const length = parseInt($('#length').value, 10) || 0;
+    const readingSel = $('#reading');
+    const reading = readingSel.value;
+    const readingText = reading ? readingSel.options[readingSel.selectedIndex].textContent : '';
+    const extra = $('#extra').value.trim();
+
+    const opts = {
+      askQuestions: $('#chk-ask-questions').checked,
+      citations: $('#chk-citations').checked,
+      examples: $('#chk-examples').checked,
+      structure: $('#chk-structure').checked,
+      showConstraints: $('#chk-constraints').checked
+    };
+
+    const sections = [];
+    sections.push(section('Role', role || 'Subject‑matter expert'));
+    sections.push(section('Task', goal));
+    if (audience) sections.push(section('Audience', audience));
+    if (extra) sections.push(section('Context', extra));
+
+    const constraints = [];
+    constraints.push('Stay within the requested scope.');
+    constraints.push('Avoid assumptions not stated in the brief.');
+    if (length > 0) constraints.push('Target length: about ' + length + ' words.');
+    if (reading) constraints.push('Reading level: ' + readingText + '.');
+    if (opts.citations) constraints.push('Cite sources when making claims.');
+    if (opts.examples) constraints.push('Provide one small illustrative example.');
+
+    const formatting = [];
+    formatting.push('Tone: ' + tone + '.');
+    formatting.push('Output format: ' + format + '.');
+    if (opts.structure) formatting.push('Use clear section headings.');
+    formatting.push('Use only standard US keyboard characters.');
+
+    const qa = [];
+    if (opts.askQuestions) {
+      qa.push('Ask up to 3 concise clarifying questions if information is missing, then solve.');
+    }
+
+    // Build prompt text
+    let text = '';
+    text += '# Instructions\n';
+    text += joinSections(sections);
+    if (opts.showConstraints) {
+      text += '\n## Constraints\n' + bullets(constraints);
+    }
+    text += '\n## Formatting\n' + bullets(formatting);
+    if (qa.length) {
+      text += '\n## Clarification\n' + bullets(qa);
+    }
+    text += '\n## Deliverable\nReturn the final answer only, unless asked for reasoning.';
+
+    $('#result').value = text.trim();
+    toast('Prompt generated');
+  }
+
+  function bullets(arr) {
+    return arr.filter(Boolean).map(x => '- ' + x).join('\n') + '\n';
+  }
+  function section(title, body) {
+    return `## ${title}\n${body}\n`;
+  }
+  function joinSections(arr) {
+    return arr.join('\n');
+  }
+
+  function copyResult() {
+    const txt = $('#result').value;
+    if (!txt) { toast('Nothing to copy'); return; }
+    navigator.clipboard.writeText(txt).then(() => toast('Copied to clipboard')).catch(() => {
+      // Fallback
+      const ta = $('#result'); ta.select(); document.execCommand('copy'); toast('Copied');
+    });
+  }
+
+  function clearComposer() {
+    $('#goal').value = '';
+    $('#role').value = '';
+    $('#audience').value = '';
+    $('#extra').value = '';
+    $('#length').value = 0;
+    $('#reading').value = '';
+    $('#tone').value = 'clear';
+    $('#format').value = 'paragraphs';
+    $('#chk-ask-questions').checked = true;
+    $('#chk-citations').checked = false;
+    $('#chk-examples').checked = false;
+    $('#chk-structure').checked = true;
+    $('#chk-constraints').checked = false;
+    $('#goal-count').textContent = '0 chars';
+  }
+
+  function saveCurrent() {
+    const text = $('#result').value.trim();
+    if (!text) { toast('Generate or paste a prompt first'); return; }
+
+    const title = deriveTitle(text);
+    const item = {
+      id: uid(),
+      title,
+      text,
+      meta: {
+        createdAt: nowISO()
+      }
+    };
+    state.history.unshift(item);
+    persist();
+    renderHistory();
+    toast('Saved to history');
+  }
+
+  function deriveTitle(text) {
+    const firstLine = text.split('\n').find(Boolean) || 'Prompt';
+    const goalLine = ($('#goal').value.trim() || '').slice(0, 80);
+    let t = goalLine || firstLine.replace(/[#*`>\-]/g, '').trim();
+    if (t.length > 80) t = t.slice(0, 80);
+    return t || 'Prompt';
+  }
+
+  function renderHistory() {
+    const list = $('#history');
+    const q = ($('#search').value || '').toLowerCase();
+    list.innerHTML = '';
+
+    const items = state.history.filter(it => !q || it.title.toLowerCase().includes(q) || it.text.toLowerCase().includes(q));
+    if (items.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'muted';
+      empty.style.padding = '12px';
+      empty.textContent = 'No saved prompts yet.';
+      list.appendChild(empty);
+      return;
+    }
+
+    items.forEach(it => {
+      const row = document.createElement('div');
+      row.className = 'history-item';
+      row.setAttribute('role', 'listitem');
+
+      const left = document.createElement('div');
+      const ttl = document.createElement('div'); ttl.className = 'history-title'; ttl.textContent = it.title;
+      const meta = document.createElement('div'); meta.className = 'muted'; meta.textContent = new Date(it.meta.createdAt).toLocaleString();
+      left.appendChild(ttl); left.appendChild(meta);
+
+      const right = document.createElement('div'); right.className = 'controls';
+      const bLoad = button('Load', () => { $('#result').value = it.text; toast('Loaded'); });
+      const bCopy = button('Copy', () => { navigator.clipboard.writeText(it.text); toast('Copied'); });
+      const bRename = button('Rename', () => renameItem(it.id));
+      const bDelete = button('Delete', () => deleteItem(it.id));
+      right.append(bLoad, bCopy, bRename, bDelete);
+
+      row.append(left, right);
+      list.appendChild(row);
+    });
+  }
+
+  function button(label, fn) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = label; on(b, 'click', fn); return b;
+  }
+
+  function renameItem(id) {
+    const item = state.history.find(x => x.id === id); if (!item) return;
+    const val = prompt('New title:', item.title) || item.title;
+    item.title = val.trim() || item.title;
+    persist(); renderHistory(); toast('Renamed');
+  }
+
+  function deleteItem(id) {
+    state.history = state.history.filter(x => x.id !== id);
+    persist(); renderHistory(); toast('Deleted');
+  }
+
+  function clearHistory() {
+    if (!confirm('Delete all saved prompts?')) return;
+    state.history = []; persist(); renderHistory(); toast('History cleared');
+  }
+
+  function downloadText(text) {
+    const blob = new Blob([text], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = (deriveTitle(text) || 'prompt') + '.txt';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 500);
+  }
+
+  function downloadJSON(obj) {
+    const blob = new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = (deriveTitle(obj.text || 'prompt') || 'prompt') + '.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 500);
+  }
+
+  function currentAsJSON() {
+    return {
+      title: deriveTitle($('#result').value || ''),
+      text: $('#result').value || '',
+      inputs: {
+        goal: $('#goal').value || '',
+        role: $('#role').value || '',
+        audience: $('#audience').value || '',
+        tone: $('#tone').value || '',
+        format: $('#format').value || '',
+        length: parseInt($('#length').value, 10) || 0,
+        reading: $('#reading').value || '',
+        extra: $('#extra').value || '',
+        options: {
+          askQuestions: $('#chk-ask-questions').checked,
+          citations: $('#chk-citations').checked,
+          examples: $('#chk-examples').checked,
+          structure: $('#chk-structure').checked,
+          showConstraints: $('#chk-constraints').checked
+        }
+      },
+      savedAt: nowISO()
+    };
+  }
+
+  function importJSONFile(ev) {
+    const file = ev.target.files && ev.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        if (data && typeof data === 'object') {
+          if (data.text) $('#result').value = data.text;
+          if (data.inputs) {
+            $('#goal').value = data.inputs.goal || '';
+            $('#role').value = data.inputs.role || '';
+            $('#audience').value = data.inputs.audience || '';
+            $('#tone').value = data.inputs.tone || 'clear';
+            $('#format').value = data.inputs.format || 'paragraphs';
+            $('#length').value = data.inputs.length || 0;
+            $('#reading').value = data.inputs.reading || '';
+            $('#extra').value = data.inputs.extra || '';
+            if (data.inputs.options) {
+              $('#chk-ask-questions').checked = !!data.inputs.options.askQuestions;
+              $('#chk-citations').checked = !!data.inputs.options.citations;
+              $('#chk-examples').checked = !!data.inputs.options.examples;
+              $('#chk-structure').checked = data.inputs.options.structure !== false;
+              $('#chk-constraints').checked = !!data.inputs.options.showConstraints;
+            }
+          }
+          toast('Imported');
+        } else {
+          toast('Invalid file');
+        }
+      } catch (e) {
+        console.error('Import error', e);
+        toast('Failed to import file');
+      } finally {
+        ev.target.value = '';
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function esc(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c])); }
+  </script>
+</body>
+</html>
