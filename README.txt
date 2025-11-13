@@ -1,0 +1,1 @@
+Replace policy placeholders with your finalized ToS, Privacy, and Refund Policy text.
